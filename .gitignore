@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.env
+
+# Node.js
+node_modules/
+dist/
+dist-ssr
+*.local
+
+# Archivos de salida de la simulación
+frames/
+*.mp4
+*.png
+!README.md
+!reporte_tecnico.md
+
+# IDEs
+.vscode/
+.idea/
+.DS_Store
