@@ -15,10 +15,13 @@ Antes de mostrar los gráficos, menciona estos tres pilares que están ocurriend
 
 ---
 
-## 🔬 2. Escenario 1: Análisis de Sensibilidad y Jacobiano
-**Haz clic en "Escenario 1" en el simulador.**
+## 🔬 2. Escenario 1: El Sismo Urbano (Sensibilidad y Jacobiano)
+**Haz clic en "Esc. 1" en el simulador.**
 
-*   **El Problema**: El sismo está en $(2.2, 2.8, -3.0)$. Tenemos 5 sensores, pero uno ($S_5$) está a -1.5km de profundidad.
+*   **Caso Real:** Se ha detectado un sismo inducido cerca de una **zona industrial**. Debido a las edificaciones, solo pudimos instalar 4 sensores en superficie, pero contamos con uno estratégico en un **pozo profundo de monitoreo ($S_5$)**.
+*   **El Problema:** El sismo está oculto en $(2.2, 2.8, -3.0)$. Nuestra primera suposición es ciega (en el origen).
+*   **Qué explicar:** "Profesor, en este caso real, el sensor del pozo es nuestra pieza clave. Sin él, el Jacobiano sería casi nulo en la dirección Z, y no podríamos saber si el sismo es superficial o profundo. $S_5$ nos da la 'ancla' vertical necesaria".
+
 *   **Qué explicar**:
     1.  **Matrices Jacobianas**: Muestra cómo el software usa las derivadas parciales $\frac{\partial A}{\partial x}, \frac{\partial A}{\partial y}, \frac{\partial A}{\partial z}$ para ajustar la posición.
     2.  **La Importancia de $S_5$**: Explica que sin el sensor profundo, la sensibilidad en el eje Z sería muy pobre. El sensor en el pozo "tira" del algoritmo hacia abajo.
@@ -26,10 +29,11 @@ Antes de mostrar los gráficos, menciona estos tres pilares que están ocurriend
 
 ---
 
-## 🌊 3. Escenario 2: El Escaneo del Valle de Error
-**Haz clic en "Escenario 2" en el simulador.**
+## 🌊 3. Escenario 2: Monitoreo de Zona de Subducción (Escaneo 3D)
+**Haz clic en "Esc. 2" en el simulador.**
 
-*   **El Problema**: Sismo profundo (-4.5km) bajo una red de 8 sensores perimetrales.
+*   **Caso Real:** Estamos monitoreando una **zona de subducción** de alta importancia sísmica. Hemos rodeado el área con una red perimetral de 8 sensores para capturar cualquier movimiento profundo.
+*   **El Problema:** Un sismo ocurre a gran profundidad (-4.5km). Necesitamos asegurar que el algoritmo no caiga en un "error falso" (mínimo local).
 *   **Dinámica de la Presentación (Sigue estos pasos):**
     1.  **Z = -1.0km (Cerca de superficie)**: Mueve el slider de profundidad. Verás que el Mapa de Calor es una mancha difusa y el Valle 3D es muy plano. *Dile al profesor: "Aquí el gradiente es pequeño, el sistema tiene mucha incertidumbre".*
     2.  **Z = -4.5km (Punto Dulce)**: Mueve el slider. Verás el "Ojo de Buey" (negro/púrpura intenso) y un pico 3D muy afilado. *Dile: "Aquí hemos hallado el Mínimo Global. Todas las derivadas parciales se anulan simultáneamente".*
@@ -37,12 +41,13 @@ Antes de mostrar los gráficos, menciona estos tres pilares que están ocurriend
 
 ---
 
-## 🏔️ 4. Escenario 3: Incertidumbre en Falla (Avanzado)
+## 🏔️ 4. Escenario 3: La Falla de San Andrés (Alineación y Anisotropía)
 **Haz clic en "Esc. 3" en el simulador.**
 
-*   **El Problema**: Los sensores están alineados casi en una diagonal (simulando una red a lo largo de una falla geológica).
-*   **Reto Matemático (Anisotropía)**: Al estar los sensores alineados, el valle de error no es un círculo perfecto, sino un **elipsoide alargado**.
-*   **Qué explicar**: "Profesor, aquí el Jacobiano nos muestra que la matriz de información es mal condicionada en una dirección. Esto demuestra que la geometría de la red de sensores dicta la precisión del cálculo multivariado".
+*   **Caso Real:** Imaginemos que estamos en una sección de una **falla geológica lineal** (como la de San Andrés). Por logística, los sensores se han colocado siguiendo el trazo de la falla (casi alineados).
+*   **El Problema:** El sismo ocurre un poco desplazado de la línea de sensores.
+*   **Reto Matemático (Incertidumbre)**: Al estar alineados, el sistema tiene un "punto ciego". El valle de error se vuelve un **elipsoide alargado**.
+*   **Qué explicar**: "Profesor, aquí vemos que la precisión no es igual en todas las direcciones. El software nos muestra un 'pasillo de incertidumbre'. Esto es vital en ingeniería para saber cuánta confianza darle a la localización según cómo pusimos los sensores".
 
 ---
 
