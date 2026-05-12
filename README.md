@@ -41,7 +41,7 @@ Cada registro se estructura como $(x_i, y_i, z_i, A_{zi})$, donde la amplitud re
 
 ## 4. Funcionalidades Principales
 1.  **Simulación de Fuente 3D:** Control total sobre la posición $(x, y)$ mediante arrastre y profundidad $(z)$ mediante sliders.
-2.  **Red de Estaciones:** Visualización de 9 sensores en superficie $(z=0)$ registrando amplitudes en tiempo real.
+2.  **Red de Estaciones:** Visualización de 9 sensores en superficie $(z=0)$ con datos observados fijos (estáticos) contra los cuales se resuelve el problema inverso.
 3.  **Análisis de Superficie de Error:** Visualización de la función $E(x, y)$ interpolada, permitiendo identificar visualmente el mínimo global.
 4.  **Cálculo de RMS:** Monitoreo constante del error cuadrático medio de la red.
 5.  **Reportes Académicos:** Generación de documentos Word con el formato requerido por la UCC, incluyendo los datos de las estaciones y parámetros de la fuente.
