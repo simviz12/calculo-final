@@ -1,6 +1,7 @@
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera, Stars, Environment, ContactShadows, DragControls, Float } from '@react-three/drei';
+import { OrbitControls, PerspectiveCamera, Stars, Environment, ContactShadows, DragControls } from '@react-three/drei';
 import { Suspense, useState, useEffect, useRef } from 'react';
+import * as THREE from 'three';
 import { 
   Zap, MapPin, Sliders, ShieldAlert, Download, 
   Layers, Eye, Thermometer, Wind, MousePointer2,
@@ -12,46 +13,48 @@ import Sensor from './components/Sensor';
 import ComparisonPanel from './components/ComparisonPanel';
 import ScientificAnalysis from './components/ScientificAnalysis';
 import ErrorScatterPlot from './components/ErrorScatterPlot';
-import { seismicWaveGaleras, getNoiseProfile, exportGalerasData } from './utils/mathUtils';
+import { calculateSeismicAmplitude, getGaussianNoise, exportGalerasData } from './utils/mathUtils';
 
 const SENSOR_CONFIG = [
-  { id: 'S1', x: -5, y: 5, profile: 'low', label: 'S1' },
-  { id: 'S2', x: 0, y: 5, profile: 'low', label: 'S2' },
-  { id: 'S3', x: 5, y: 5, profile: 'low', label: 'S3' },
-  { id: 'S4', x: -5, y: 0, profile: 'critical', label: 'S4' },
-  { id: 'S5', x: 0, y: 0, profile: 'critical', label: 'S5' },
-  { id: 'S6', x: 5, y: 0, profile: 'critical', label: 'S6', hasFault: true },
-  { id: 'S7', x: -5, y: -5, profile: 'moderate', label: 'S7' },
-  { id: 'S8', x: 0, y: -5, profile: 'moderate', label: 'S8' },
-  { id: 'S9', x: 5, y: -5, profile: 'moderate', label: 'S9' },
+  { id: 'S1', x: -5, y: 5, z: 0, label: 'S1' },
+  { id: 'S2', x: 0, y: 5, z: 0, label: 'S2' },
+  { id: 'S3', x: 5, y: 5, z: 0, label: 'S3' },
+  { id: 'S4', x: -5, y: 0, z: 0, label: 'S4' },
+  { id: 'S5', x: 0, y: 0, z: 0, label: 'S5' },
+  { id: 'S6', x: 5, y: 0, z: 0, label: 'S6' },
+  { id: 'S7', x: -5, y: -5, z: 0, label: 'S7' },
+  { id: 'S8', x: 0, y: -5, z: 0, label: 'S8' },
+  { id: 'S9', x: 5, y: -5, z: 0, label: 'S9' },
 ];
 
 function App() {
-  const [sourcePos, setSourcePos] = useState({ x: 0, y: 0 });
-  const [waveParams, setWaveParams] = useState({ amplitude: 8.0, damping: 0.1, waveNumber: 1.5, frequency: 2.0 });
-  const [noiseBase, setNoiseBase] = useState(0.1);
-  const [magmaViscosity, setMagmaViscosity] = useState(1);
+  const [sourcePos, setSourcePos] = useState({ x: 0, y: 0, z: -2 }); // Depth z is negative
+  const [A0, setA0] = useState(10.0);
+  const [alpha, setAlpha] = useState(0.05); // Noise level
   const [viewMode, setViewMode] = useState('wave');
-  const [showGradients, setShowGradients] = useState(false);
   const [showStats, setShowStats] = useState(true);
   const [sensors, setSensors] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
-  const history = useRef([]);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      const t = Date.now() / 1000;
+    const updateSimulation = () => {
       const updatedSensors = SENSOR_CONFIG.map(config => {
-        const zIdeal = seismicWaveGaleras(config.x, config.y, t, sourcePos, { ...waveParams, frequency: waveParams.frequency * magmaViscosity });
-        let noise = getNoiseProfile(config.profile, noiseBase);
-        if (config.hasFault) noise += Math.sin(t * 12) * 0.4;
-        const zObs = zIdeal + noise;
-        return { ...config, currentVal: zObs, currentError: Math.abs(zObs - zIdeal) };
+        const aIdeal = calculateSeismicAmplitude(config, sourcePos, A0);
+        const noise = getGaussianNoise(aIdeal, alpha);
+        const aObs = aIdeal + noise;
+        return { 
+          ...config, 
+          currentVal: aObs, 
+          currentError: Math.abs(aObs - aIdeal) 
+        };
       });
       setSensors(updatedSensors);
-    }, 100);
+    };
+
+    updateSimulation();
+    const interval = setInterval(updateSimulation, 200); // Slower update for stability
     return () => clearInterval(interval);
-  }, [waveParams, noiseBase, magmaViscosity, sourcePos]);
+  }, [sourcePos, A0, alpha]);
 
   return (
     <div style={{ width: '100%', height: '100vh', background: '#020617', display: 'flex', flexDirection: 'column', fontFamily: 'Inter', color: 'white', overflow: 'hidden' }}>
@@ -62,10 +65,10 @@ function App() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.2rem' }}>
           <div style={{ background: '#f43f5e', padding: '0.6rem', borderRadius: '0.8rem', boxShadow: '0 0 30px rgba(244, 63, 94, 0.6)' }}><Zap size={24} color="white" /></div>
           <div>
-            <h1 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 950, letterSpacing: '-0.5px' }}>SISMO-MONITOR 3D <span style={{ color: '#f43f5e' }}>GALERAS</span></h1>
+            <h1 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 950, letterSpacing: '-0.5px' }}>SISMO-LOCALIZADOR 3D <span style={{ color: '#f43f5e' }}>UCC</span></h1>
             <div style={{ display: 'flex', gap: '1rem', marginTop: '2px' }}>
-              <span style={{ fontSize: '0.65rem', color: '#10b981', fontWeight: 800 }}>SIMULATION: ACTIVE</span>
-              <span style={{ fontSize: '0.65rem', color: '#60a5fa', fontWeight: 800 }}>• UCC PASTO, NARIÑO</span>
+              <span style={{ fontSize: '0.65rem', color: '#10b981', fontWeight: 800 }}>MODELO: ATENUACIÓN EXPONENCIAL</span>
+              <span style={{ fontSize: '0.65rem', color: '#60a5fa', fontWeight: 800 }}>• PROYECTO CÁLCULO MULTIVARIADO</span>
             </div>
           </div>
         </div>
@@ -75,7 +78,7 @@ function App() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 800, fontSize: '0.85rem' }}>
               <User size={16} color="#f43f5e" /> CARLOS JULIÁN BENAVIDES BURBANO
             </div>
-            <div style={{ fontSize: '0.65rem', opacity: 0.5, fontWeight: 700 }}>INGENIERÍA - CÁLCULO MULTIVARIADO</div>
+            <div style={{ fontSize: '0.65rem', opacity: 0.5, fontWeight: 700 }}>INGENIERÍA - SEDE PASTO</div>
           </div>
         </div>
       </header>
@@ -85,19 +88,17 @@ function App() {
         <aside style={{ width: '320px', background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(40px)', padding: '1.5rem', borderRight: '1px solid rgba(255, 255, 255, 0.1)', display: 'flex', flexDirection: 'column', gap: '1.5rem', zIndex: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
             <Sliders size={20} color="#f43f5e" />
-            <h2 style={{ fontSize: '1rem', fontWeight: 900, margin: 0 }}>PARAMETRIZACIÓN</h2>
+            <h2 style={{ fontSize: '1rem', fontWeight: 900, margin: 0 }}>PARÁMETROS FUENTE</h2>
           </div>
 
-          <ControlSlider label="Amplitud Sísmica (A)" value={waveParams.amplitude.toFixed(1)} min={0.1} max={15} step={0.1} icon={Activity} onChange={v => setWaveParams(p => ({ ...p, amplitude: v }))} />
-          <ControlSlider label="Atenuación Suelo (b)" value={waveParams.damping.toFixed(2)} min={0.01} max={0.5} step={0.01} icon={Wind} onChange={v => setWaveParams(p => ({ ...p, damping: v }))} />
-          <ControlSlider label="Viscosidad Magma (ω)" value={magmaViscosity.toFixed(1)} min={0.5} max={4} step={0.1} icon={Thermometer} onChange={v => setMagmaViscosity(v)} />
-          <ControlSlider label="Nivel Ruido Mausigno" value={noiseBase.toFixed(2)} min={0.01} max={1.0} step={0.01} icon={ShieldAlert} onChange={v => setNoiseBase(v)} />
+          <ControlSlider label="Amplitud Origen (A0)" value={A0.toFixed(1)} min={1} max={50} step={1} icon={Activity} onChange={v => setA0(v)} />
+          <ControlSlider label="Profundidad (z0)" value={sourcePos.z.toFixed(1)} min={-15} max={-0.5} step={0.1} icon={MapPin} onChange={v => setSourcePos(p => ({ ...p, z: v }))} />
+          <ControlSlider label="Nivel Ruido (α)" value={alpha.toFixed(2)} min={0.01} max={0.2} step={0.01} icon={ShieldAlert} onChange={v => setAlpha(v)} />
 
           <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-            <SidebarButton active={viewMode === 'error'} onClick={() => setViewMode(viewMode === 'wave' ? 'error' : 'wave')} icon={Layers} text="VER CAMPO DE ERROR (E)" />
-            <SidebarButton active={showGradients} onClick={() => setShowGradients(!showGradients)} icon={MousePointer2} text="DIRECCIÓN DE ENERGÍA (∇f)" />
-            <SidebarButton active={showStats} onClick={() => setShowStats(!showStats)} icon={BarChart} text="ANÁLISIS ESTADÍSTICO" />
-            <button onClick={() => exportGalerasData(sensors)} style={{ background: '#10b981', border: 'none', color: 'white', padding: '1rem', borderRadius: '1rem', cursor: 'pointer', fontWeight: 900, fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem', boxShadow: '0 10px 25px rgba(16, 185, 129, 0.4)' }}>
+            <SidebarButton active={viewMode === 'error'} onClick={() => setViewMode(viewMode === 'wave' ? 'error' : 'wave')} icon={Layers} text="ANALIZAR SUPERFICIE ERROR" />
+            <SidebarButton active={showStats} onClick={() => setShowStats(!showStats)} icon={BarChart} text="VER ESTADÍSTICAS" />
+            <button onClick={() => exportGalerasData(sensors, sourcePos, A0)} style={{ background: '#10b981', border: 'none', color: 'white', padding: '1rem', borderRadius: '1rem', cursor: 'pointer', fontWeight: 900, fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem', boxShadow: '0 10px 25px rgba(16, 185, 129, 0.4)' }}>
               <Download size={16} /> GENERAR REPORTE WORD
             </button>
           </div>
@@ -106,16 +107,15 @@ function App() {
         <div style={{ flex: 1, position: 'relative' }}>
           <Canvas shadows>
             <Suspense fallback={null}>
-              <PerspectiveCamera makeDefault position={[25, 25, 25]} />
+              <PerspectiveCamera makeDefault position={[15, 15, 15]} />
               <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
               <ambientLight intensity={0.5} />
               <pointLight position={[10, 20, 10]} intensity={3} color="#38bdf8" />
               
               <SeismicGrid 
                 source={sourcePos}
-                waveParams={{ ...waveParams, frequency: waveParams.frequency * magmaViscosity }} 
+                A0={A0}
                 viewMode={viewMode}
-                showGradients={showGradients}
                 sensors={sensors}
               />
 
@@ -124,13 +124,13 @@ function App() {
                 onDragEnd={() => setIsDragging(false)}
                 onDrag={(matrix) => {
                   const pos = new THREE.Vector3().setFromMatrixPosition(matrix);
-                  setSourcePos({ x: pos.x, y: pos.z });
+                  setSourcePos(p => ({ ...p, x: pos.x, y: pos.z }));
                 }}
               >
-                <group position={[sourcePos.x, 1.2, sourcePos.y]}>
+                <group position={[sourcePos.x, sourcePos.z, sourcePos.y]}>
                   <mesh>
                     <sphereGeometry args={[0.5, 32, 32]} />
-                    <meshStandardMaterial color="#f43f5e" emissive="#f43f5e" emissiveIntensity={20} />
+                    <meshStandardMaterial color="#f43f5e" emissive="#f43f5e" emissiveIntensity={10} transparent opacity={0.8} />
                   </mesh>
                   <pointLight distance={15} intensity={12} color="#f43f5e" />
                 </group>
@@ -139,38 +139,35 @@ function App() {
               {sensors.map(s => (
                 <Sensor 
                   key={s.id} 
-                  position={[s.x, 0.8, s.y]} 
-                  color={s.hasFault ? '#f43f5e' : '#10b981'} 
+                  position={[s.x, 0, s.y]} 
+                  color={'#10b981'} 
                   label={s.label}
                   intensity={s.currentVal}
                   error={s.currentError}
-                  noiseProfile={s.profile}
                 />
               ))}
 
               <Environment preset="night" />
               <ContactShadows position={[0, -0.01, 0]} opacity={0.6} scale={40} blur={2.5} far={4.5} />
-              <OrbitControls makeDefault enabled={!isDragging} minPolarAngle={0} maxPolarAngle={Math.PI / 2.1} />
+              <OrbitControls makeDefault enabled={!isDragging} minPolarAngle={0} maxPolarAngle={Math.PI} />
             </Suspense>
           </Canvas>
 
-          {/* DRAGGABLE EPICENTER INSTRUCTION */}
           <div style={{ position: 'absolute', top: '1.5rem', left: '50%', transform: 'translateX(-50%)', background: 'rgba(2, 6, 23, 0.6)', padding: '0.6rem 1.2rem', borderRadius: '100px', fontSize: '0.7rem', fontWeight: 800, border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)', letterSpacing: '1px', color: '#f43f5e' }}>
-            MASTER CONTROL: ARRASTRA EL EPICENTRO
+            LOCALIZACIÓN: ARRASTRA LA FUENTE (X, Y) Y AJUSTA Z EN EL PANEL
           </div>
 
-          {/* NEW STATIC XY MAP PANEL */}
           {showStats && <ErrorScatterPlot sensors={sensors} />}
-          
           {showStats && <ScientificAnalysis sensors={sensors} />}
         </div>
 
-        <ComparisonPanel sensors={sensors} waveParams={waveParams} />
+        <ComparisonPanel sensors={sensors} A0={A0} />
 
       </main>
     </div>
   );
 }
+
 
 const ControlSlider = ({ label, value, min, max, step, onChange, icon: Icon }) => (
   <div style={{ marginBottom: '0.5rem' }}>
