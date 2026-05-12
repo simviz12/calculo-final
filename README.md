@@ -19,25 +19,40 @@ El proyecto se basa en los siguientes modelos matemáticos extraídos de la guí
   Se busca minimizar la suma de los residuos al cuadrado:
   $$E_{rr} = \sum_{i=1}^{M} (A_{zi} - A'_{zi})^2$$
 
-## 2. Arquitectura del Software
+## 2. Estructura de Datos (Simulados vs Observados)
+De acuerdo a los requerimientos del proyecto (Sección 2.4), el software maneja y diferencia claramente los parámetros reales de la fuente y los datos observados por la red de sensores.
+
+### Parámetros Reales del Modelo ($m$)
+Son las variables exactas que originan el sismo. En un escenario real, estas son las incógnitas que el problema inverso busca estimar:
+$$m = [x_0, y_0, z_0, A_0]^T$$
+- $(x_0, y_0, z_0)$: Coordenadas espaciales de la fuente sísmica.
+- $A_0$: Amplitud sísmica original.
+*Nota: En nuestra interfaz, el docente o usuario define estos valores en el panel "Parámetros Fuente" para generar el sismo.*
+
+### Datos Observados Simulados ($A_z$)
+Es la información capturada por la malla de sensores. Para $M=9$ estaciones ubicadas en la superficie ($z_i = 0$):
+$$A_z = [A_{z1}, A_{z2}, \dots, A_{zM}]^T$$
+Cada registro se estructura como $(x_i, y_i, z_i, A_{zi})$, donde la amplitud registrada $A_{zi}$ ya incluye el ruido gaussiano simulado. Estos datos alimentan la función objetivo para el cálculo del error.
+
+## 3. Arquitectura del Software
 - **Frontend:** React.js + Vite.
 - **Visualización 3D:** Three.js con React Three Fiber.
 - **Cálculo Numérico:** Implementación de modelos multivariados para la generación de superficies de error.
 
-## 3. Funcionalidades Principales
+## 4. Funcionalidades Principales
 1.  **Simulación de Fuente 3D:** Control total sobre la posición $(x, y)$ mediante arrastre y profundidad $(z)$ mediante sliders.
 2.  **Red de Estaciones:** Visualización de 9 sensores en superficie $(z=0)$ registrando amplitudes en tiempo real.
 3.  **Análisis de Superficie de Error:** Visualización de la función $E(x, y)$ interpolada, permitiendo identificar visualmente el mínimo global.
 4.  **Cálculo de RMS:** Monitoreo constante del error cuadrático medio de la red.
 5.  **Reportes Académicos:** Generación de documentos Word con el formato requerido por la UCC, incluyendo los datos de las estaciones y parámetros de la fuente.
 
-## 4. Instalación
+## 5. Instalación
 1. Clonar el repositorio.
 2. Ejecutar `npm install`.
 3. Iniciar con `npm run dev`.
 
 ---
-## 5. Guía de Sustentación (Para el Docente)
+## 6. Guía de Sustentación (Para el Docente)
 
 ### Resumen de Avances Logrados
 Al presentar este proyecto, puedes destacar los siguientes hitos técnicos:
